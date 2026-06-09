@@ -10,22 +10,40 @@ export default function Login() {
   const router = useRouter();
   const [loginState, setLoginState] = useState<'idle' | 'success' | 'welcome'>('idle');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
-    // 1. Show "Login successfully"
-    setLoginState('success');
-    
-    // 2. Show "Welcome [User Name]" after 1.5 seconds
-    setTimeout(() => {
-      setLoginState('welcome');
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
       
-      // 3. Redirect to landing page after another 2 seconds
-      setTimeout(() => {
-        router.push('/');
-      }, 2000);
-    }, 1500);
+      const data = await res.json();
+      
+      if (res.ok) {
+        setLoginState('success');
+        setTimeout(() => {
+          setLoginState('welcome');
+          setTimeout(() => {
+            router.push('/dashboard'); // Go to dashboard instead of home
+          }, 2000);
+        }, 1500);
+      } else {
+        setError(data.message || 'Invalid credentials');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Extract name from email (e.g. pawan@example.com -> Pawan)
@@ -56,6 +74,9 @@ export default function Login() {
               <p className="text-gray-400">Log in to continue to ResumeAI Pro</p>
             </div>
             
+            {error && <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 text-sm text-center">{error}</div>}
+
+            
             <form onSubmit={handleLogin} className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
@@ -73,15 +94,18 @@ export default function Login() {
                 <input 
                   type="password" 
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white focus:outline-none focus:border-purple-500 transition"
                   placeholder="••••••••"
                 />
               </div>
               <button 
                 type="submit"
-                className="w-full py-3 px-4 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 transition shadow-[0_0_20px_rgba(147,51,234,0.3)]"
+                disabled={loading}
+                className="w-full py-3 px-4 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 transition shadow-[0_0_20px_rgba(147,51,234,0.3)] disabled:opacity-50"
               >
-                Log in
+                {loading ? 'Logging in...' : 'Log in'}
               </button>
             </form>
 
