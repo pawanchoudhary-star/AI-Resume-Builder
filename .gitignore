@@ -38,3 +38,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+server/node_modules/
+server/dist/
+user/node_modules/
+user/.next/
